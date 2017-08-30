@@ -39,7 +39,7 @@ public class align {
 		// Read alignment matrix from console
 		MatrixFileIO align = new MatrixFileIO("BLOSUM62");
 //		align.validate();
-		align.makeMatrix();
+		align.populate();
 		
 		// Calculate score and write to file (incomplete)
 		GlobalScore score = new GlobalScore(fasta.getSize());
