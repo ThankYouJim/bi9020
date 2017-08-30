@@ -1,0 +1,4 @@
+# ignore the test files 
+invalid*
+/s501-v1
+/s501

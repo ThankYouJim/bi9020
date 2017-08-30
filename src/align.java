@@ -18,34 +18,32 @@ import java.util.Scanner;
 public class align {
 	final static String PROMPT = "$> align <sequence_file> <alignment_file>";
 	
-	public static void globalAlign() {
-		final int dTest = 8;	// 8 for initial testing
-		final int d = 7;
-		final int e = 1;
-	}
+//	public static void globalAlign() {
+//		final int dTest = 8;	// 8 for initial testing
+//		final int d = 7;
+//		final int e = 1;
+//	}
 	
 	public static void main(String[] args) throws FASTAException {
-		// Validate console input
-		if (args.length != 2) {
-			System.out.println("ERROR: wrong number of arguments.");
-			System.out.println("Try: " + PROMPT);
-			return;
-		}
+
+		// READ USER COMMAND
+		// Display error message if input and output FASTA files are not provided
+		Utils.readConsole(args, 2, PROMPT);
 		
-		// Read FASTA file from console
+		// READ GENERATED FASTA MUTATION FILE
 		FASTAFileIO fasta = new FASTAFileIO(args[0]);
-		fasta.validate();
+//		fasta.validate();
 		
 		// Read alignment matrix from console
-		MatrixFileIO align = new MatrixFileIO("BLOSUM62");
-//		align.validate();
-		align.populate();
-		
-		// Calculate score and write to file (incomplete)
-		GlobalScore score = new GlobalScore(fasta.getSize());
-		score.populate(fasta.getSequence(), align);
-		
-		Utils.writeToFile(args[1], score.toString());
+//		MatrixFileIO align = new MatrixFileIO("BLOSUM62");
+////		align.validate();
+//		align.populate();
+//		
+//		// Calculate score and write to file (incomplete)
+//		GlobalScore score = new GlobalScore(fasta.getSize());
+//		score.populate(fasta.getSequence(), align);
+//		
+//		Utils.writeToFile(args[1], score.toString());
 	}
 }
 
