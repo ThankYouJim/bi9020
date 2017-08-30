@@ -12,3 +12,11 @@
 /argsException.class
 /evolve.class
 /utils.class
+/evolve$Entry.class
+/evolve$Fasta.class
+/evolve$Matrix.class
+/MatrixFileIO.class
+/MutMatrixFileIO.class
+/utility/
+/Utils.class
+/FASTAEntry.class

@@ -3,24 +3,14 @@
  * z5137601 Chong Chin Yi
  */
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 public class evolve {
-	
-	// Magic Numbers
-	static int TYPES = 20;
-	static int GENERATIONS = 501;
+	final static String PROMPT = "$>evolve <FASTA input file> <FASTA output file>";
 	
 	static Matrix matrix = new Matrix();
 	
@@ -47,162 +37,77 @@ public class evolve {
 	}
 	
 	public static void main(String[] args) {
-		
-		// File readers and writers
-		FileReader fr = null;
-		FileWriter fw = null;
-		BufferedReader br = null;
-
-		Fasta[] generations = new Fasta[GENERATIONS];
-		Fasta original = new Fasta();
-
-		String[] index = new String[TYPES];	// stores 20 types of amino acids
-		
+		MutMatrixFileIO matrix = null;
+		FASTAEntry originSeq = null;
+		List<String> sequences = null;
 		
 		// READ USER COMMAND
-		
-		// Display message if input and output FASTA files are not provided
-		if (args.length != 2) {
-			System.err.println("Incorrect command. Try: $>evolve <input file> <output file>");
-			System.err.println("eg.: $>evolve s001 s501");
-			return;
-		}
-		
-		// Welcome message
-		System.out.println("=== BINF9020 Ass 1 Part 1 - Amino Acid Mutation Simulation ===");
-		System.out.println("Command: $>evolve <input file> <output file>");
-
+		// Display error message if input and output FASTA files are not provided
+		Utils.readConsole(args, 2, PROMPT);
 		
 		// READ MATRIX FILE
+		matrix = new MutMatrixFileIO("matrix"); 
 		
+		// LOAD INPUT SEQUENCE DATA
 		try {
-			fr = new FileReader(new File("matrix"));
-			br = new BufferedReader(fr);
-
-			String readLine = "";
-			String delims = ",";
-			
-			int ct = 0; // counter just so not to read the last line of the matrix file
-			
-			// Read rest of line into Item class
-			while ((readLine = br.readLine()) != null && ct <= TYPES) {
-				readLine = readLine.trim();
-				String[] tokens = readLine.split(delims);	// tokens.length = 21
-				// Read first line as index of amino acids
-				if (ct == 0)
-					for(int i=0; i < tokens.length-1; i++) {
-						index[i] = tokens[i+1];	// ignore the first empty space
-					}
-				else {
-					String target = tokens[0];
-					for(int i=1; i < tokens.length; i++) {
-//						double probability = Double.parseDouble(tokens[i]) / 10000;
-						int probability = Integer.parseInt(tokens[i]);	// range from 0~10000
-						matrix.addEntry(index[i-1], target, probability);
-					}
-				}
-				ct++;
-			}
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+			// load the FASTAEntry file with list read from input file
+			originSeq = new FASTAEntry(Utils.readFrFile(args[0]));
+			// check with the already load matrix class if the content is valid
+			originSeq.validate(matrix);
+		} catch (FASTAException e) {
 			e.printStackTrace();
 		}
 		
-		// LOAD INPUT FILE
-		
-		// Read and load the original sequence to the Fasta array
-		try {
-			fr = new FileReader(new File(args[0]));
-			br = new BufferedReader(fr);
-			
-			String readLine = "";
-			String sequence = "";
-			// read sequence header
-			if ((readLine = br.readLine()) != null)
-				original.setHeader(readLine);	
-			// set rest of the sequence to the class sequence
-			while ((readLine = br.readLine()) != null)
-				sequence += readLine;
-			original.setSequence(sequence);
-			
-			// Check if the file is valid FASTA format
-			int ct = 0; 
-			boolean check = true;
-			while (check == true && ct < sequence.length()) {
-				check = false;
-				char c = sequence.charAt(ct);
-				for (int i=0; i<TYPES; i++) {
-					char x = index[i].charAt(0);
-					if (c == x) {
-						check = true;
-						break;
-					}
-				}
-				ct++;
-			}
-			
-			if (check == false) {
-				System.err.println("Invalid FASTA file! Exiting...");
-			}
-			
-			generations[0] = original;
-			
-			br.close();
-			fr.close();
-		} catch (FileNotFoundException e) {
-			System.err.println("Specified input file does not exist!");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		// TODO: Detect invalid FASTA file format as exception
+		// START THE MUTATION FOR 500 ROUNDS
+		// 500 + 1 to include the origin sequence
+		sequences = new ArrayList<String>(Utils.GEN + 1);
+		sequences.add(originSeq.getSequence());
 		
 		
 		// WRITE TO FILE
 		
-		try {
-			File file = new File(args[1]);
-			fw = new FileWriter(file);
-
-			// Write the origin sequence
-			Set<String> split0 = new HashSet<String>();
-			String seq = generations[0].getSequence();
-			while (seq.length() > 80) {
-				String s = seq.substring(0, 80);
-				seq = seq.substring(81, seq.length());
-				split0.add(s);
-			}
-			fw.write(generations[0].getHeader());
-			fw.write("\n");
-			for (String s : split0)
-				fw.write(s);
-			fw.write("\n\n");
-			
-			for (int gen = 1; gen < GENERATIONS; gen++) {
-				String mutHeader = generations[0].getHeader() + " Mutation " + gen;
-				String mutSequence = mutate(generations[gen-1].getSequence());
-				Fasta fasta = new Fasta(mutHeader, mutSequence);
-				generations[gen] = fasta;
-				
-				// Split the sequence to 80 chars per line for FASTA format
-				Set<String> split = new HashSet<String>();
-				while (mutSequence.length() > 80) {
-					String s = mutSequence.substring(0, 80);
-					mutSequence = mutSequence.substring(81, mutSequence.length());
-					split.add(s);
-				}
-				
-				fw.write(generations[gen].getHeader());
-				fw.write("\n");
-				for (String s : split)
-					fw.write(s);
-				fw.write("\n\n");
-			}
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			File file = new File(args[1]);
+//			fw = new FileWriter(file);
+//
+//			// Write the origin sequence
+//			Set<String> split0 = new HashSet<String>();
+//			String seq = generations[0].getSequence();
+//			while (seq.length() > 80) {
+//				String s = seq.substring(0, 80);
+//				seq = seq.substring(81, seq.length());
+//				split0.add(s);
+//			}
+//			fw.write(generations[0].getHeader());
+//			fw.write("\n");
+//			for (String s : split0)
+//				fw.write(s);
+//			fw.write("\n\n");
+//			
+//			for (int gen = 1; gen < GENERATIONS; gen++) {
+//				String mutHeader = generations[0].getHeader() + " Mutation " + gen;
+//				String mutSequence = mutate(generations[gen-1].getSequence());
+//				Fasta fasta = new Fasta(mutHeader, mutSequence);
+//				generations[gen] = fasta;
+//				
+//				// Split the sequence to 80 chars per line for FASTA format
+//				Set<String> split = new HashSet<String>();
+//				while (mutSequence.length() > 80) {
+//					String s = mutSequence.substring(0, 80);
+//					mutSequence = mutSequence.substring(81, mutSequence.length());
+//					split.add(s);
+//				}
+//				
+//				fw.write(generations[gen].getHeader());
+//				fw.write("\n");
+//				for (String s : split)
+//					fw.write(s);
+//				fw.write("\n\n");
+//			}
+//			fw.close();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 }
 
